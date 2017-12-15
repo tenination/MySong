@@ -140,6 +140,14 @@ router.post(
       .catch(err => res.send(err));
   },
 );
+//update a playlist endpoint
+router.put(
+  '/aplaylist',
+  (req, res) => {
+    console.log('PUT to /aplaylist detected!');
+    console.log('req.body is ', req.body);
+  },
+);
 
 router.post(
   '/getFollowing',
