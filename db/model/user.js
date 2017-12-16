@@ -147,6 +147,25 @@ User.changeCurrentSong = (spotifyId, mySong) => {
     })
 };
 
+User.updatePlaylist = (spotifyId, originalName, newPlaylist) => {
+  console.log('User.updatePlaylist endpoint reached!');
+  console.log('arguments are ', spotifyId, originalName, newPlaylist);
+  return User.update(
+    { spotifyId: spotifyId, 'playlists.playlistName': originalName },
+    {
+      $set: {
+        'playlists.$': newPlaylist }
+  })
+  .exec()
+    .then((res) => {
+      return res;
+    })
+    .catch((err) => {
+      console.log('error is ', err);
+      return err;
+    })
+};
+
 User.search = query => (
   User.find({}, 'mySongUsername spotifyId').exec()
     .then(users => users)

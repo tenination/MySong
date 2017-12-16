@@ -8,16 +8,21 @@ class CurrentPlaylist extends React.Component {
     super(props);
     this.state = {
       playlistSongArr: [],
+      playlistObj: this.props.currentPlaylistObj
     };
+
     this.makeArrayofURIs = this.makeArrayofURIs.bind(this);
-    this.getAPlaylist();
+    this.getAPlaylist = this.getAPlaylist.bind(this);
     this.songMapFunction = this.songMapFunction.bind(this);
+    this.getAPlaylist();
   }
 
   componentDidUpdate(prevProps, prevState) {
+    console.log('ComponentDidUpdate - CurrentPlaylist')
     if (prevProps.currentPlaylistObj.name !== this.props.currentPlaylistObj.name) {
       this.getAPlaylist();
     }
+    console.log('this.state.playlistSongArr ', this.state.playlistSongArr);
   }
 
   getAPlaylist() {
@@ -55,8 +60,6 @@ class CurrentPlaylist extends React.Component {
     });
   }
 
-
-
   render() {
     return (
       <div>
@@ -66,7 +69,7 @@ class CurrentPlaylist extends React.Component {
             style={{ fontSize: 15, marginLeft: 20 }}
           >Save this Playlist on Spotify
           </button>
-          <EditPlaylistModal playlistName={this.props.currentPlaylistObj.name} spotifyId={this.props.spotifyUserId} playlistSongArr={this.state.playlistSongArr} />
+          <EditPlaylistModal updatePlaylists={this.props.updatePlaylists} playlistName={this.props.currentPlaylistObj.name} spotifyId={this.props.spotifyUserId} playlistSongArr={this.state.playlistSongArr} />
         </h1>
         <div>{this.state.tracksBySpotifyUserId}</div>
         {this.state.playlistSongArr.length > 0 && this.state.songsArrayBySpotifyUserID.map(this.songMapFunction)}

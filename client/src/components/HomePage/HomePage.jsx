@@ -24,6 +24,7 @@ class HomePage extends React.Component {
       spotifyRefreshToken: '',
       spotifyToken: '',
       spotifyUsername: '',
+      playlists:[],
       currentPlaylist: null,
       currentMySong:{
         trackSummary: '',
@@ -43,6 +44,7 @@ class HomePage extends React.Component {
     this.handleMySongChange = this.handleMySongChange.bind(this);
     this.newPlaylistHandleClick = this.newPlaylistHandleClick.bind(this);
     this.handleFollowingRefresh = this.handleFollowingRefresh.bind(this);
+    this.updatePlaylists = this.updatePlaylists.bind(this);
   }
 
   componentDidMount() {
@@ -58,6 +60,17 @@ class HomePage extends React.Component {
           spotifyUsername: user.spotifyUsername,
           currentMySong: user.currentMySong,
         });
+      })
+      .then((res) => {
+        console.log('playlists are being retrieved now!');
+        axios.get(`/api/playlists?spotifyUserID=${this.state.spotifyId}`)
+         .then((response) => {
+          this.setState({ playlists: response.data[0].playlists });
+           console.log('sucesss on setting playlists!', this.state.playlists);
+          return response;
+         })
+         .catch(err => err);
+
       })
       .catch((err) => {
         console.log(err);
@@ -85,6 +98,19 @@ class HomePage extends React.Component {
 
   handleFollowingRefresh() {
     this.setState({currentUser: this.state.currentUser})
+  }
+
+  updatePlaylists(newPlaylist) {
+    axios.get(`/api/playlists?spotifyUserID=${this.state.spotifyId}`)
+      .then((response) => {
+        this.setState({ playlists: response.data[0].playlists, 
+        currentPlaylistObj: newPlaylist 
+      });
+        console.log('update playlists called - current', this.state.currentPlaylistObj);
+
+        //return response;
+      })
+      .catch(err => err);
   }
 
   handlePlaylistEntryClick(playlistID, playlistURI, name) {
@@ -128,6 +154,7 @@ class HomePage extends React.Component {
           <Grid columns={3} stackable>
             <Grid.Column style={{ width: '20%' }}>
               {this.state.spotifyId && (<PlaylistContainer
+                playlists = {this.state.playlists}
                 clickHandler={this.handlePlaylistEntryClick.bind(this)}
                 spotifyId={this.state.spotifyId}
               />)}
@@ -138,6 +165,7 @@ class HomePage extends React.Component {
                 <CurrentPlaylist
                   currentPlaylistObj={this.state.currentPlaylistObj}
                   spotifyUserId={this.state.spotifyId}
+                  updatePlaylists={this.updatePlaylists}
                 />
               )}
             </Grid.Column>
