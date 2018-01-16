@@ -15,6 +15,7 @@ class MyCurrentSongContainer extends React.Component {
     };
     this.setWait = this.setWait.bind(this);
     this.disconnectTwitter = this.disconnectTwitter.bind(this);
+    this.emailHandler = this.emailHandler.bind(this);
   }
 
   componentDidMount() {
@@ -70,6 +71,15 @@ class MyCurrentSongContainer extends React.Component {
           .catch(err => console.error(err, err));
   }
 
+  emailHandler() {
+    console.log('Email Handler being called!');
+    axios.get(`/api/email`)
+      .then((response) => {
+        console.log(response);
+      })
+      .catch(err => err);
+  }
+
   render() {
     //const twitterConnect = this.state.twitter ? 'url(https://dabuttonfactory.com/button.png?t=disconnect+from+twitter&f=Calibri-Bold&ts=23&tc=fff&w=271&h=50&c=round&bgt=gradient&bgc=9ecbf4&ebgc=3291e8)' : ;
     return (
@@ -120,6 +130,14 @@ class MyCurrentSongContainer extends React.Component {
           }}
           onClick={this.disconnectTwitter}
         ></a>)}
+       <button
+         onClick={this.emailHandler}
+         style={{
+           width: '100px',
+           height: '100px',
+           float: 'left'
+         }}
+       >Email Me</button>
       </div>
     );
   }

@@ -3,7 +3,7 @@ const axios = require('axios');
 const User = require('../../db/model/user.js');
 const path = require('path');
 require('dotenv').config({ path: '../../env.env' });
-const keys = require('./keys');
+const keys = require('../../keys');
 const jwt = require('jwt-simple');
 const $ = require('jquery');
 // const btoa = require('btoa');
@@ -11,6 +11,7 @@ const $ = require('jquery');
 const passport = require('passport');/* http://www.passportjs.org/docs */
 // const redirect = require('./redirect.html');
 const Twitter = require('twitter');
+const nodemailer = require('nodemailer');
 const secret = 'myappisawesome';
 const HOME = 'http://127.0.0.1:3000';
 
@@ -162,6 +163,7 @@ router.get(
 router.get(
   '/aplaylist',
   (req, res) => {
+    console.log('/aplaylist endpoint called!');
     User.getAPlaylist(req.query.spotifyUserId, req.query.playlistName)
       .then((result) => {
         const songsArrayBySpotifyUserID = result[0].playlists[0].songsArrayBySpotifyUserID;
@@ -372,6 +374,82 @@ router.get(
     .then((response) => {
       res.send('Successfully disconnected from twitter');
     })
+  },
+);
+
+router.get(
+  '/email',
+   (req, res) => {
+    console.log('email endpoint is being called');
+    var htmlResponse = [];
+    htmlResponse.push('<h1>Your Playlists </h1>');
+    const spotifyId = req.session.passport.user.spotifyId;
+    
+    User.getUserPlaylists(spotifyId)
+      .then( async (response) => {
+        const playlists = response[0].playlists;
+        console.log(response[0].playlists);
+        for (let i = 0; i < playlists.length; i++) {
+          console.log('playlist name is', playlists[i].playlistName);
+          htmlResponse.push(`<h2>${playlists[i].playlistName}</h2>`);
+          await User.getAPlaylist(spotifyId, playlists[i].playlistName)
+            .then((result) => {
+              const songsArrayBySpotifyUserID = result[0].playlists[0].songsArrayBySpotifyUserID;
+              User.populateAPlaylist(songsArrayBySpotifyUserID)
+              .then((response) => {
+            console.log('RESPONSE ***************',response);
+            console.log('PLAYLIST NAME is', playlists[i].playlistName);
+          })
+          .catch((err) => {
+            res.send(err);
+          });
+      })
+      .catch(err => res.send(err));
+
+    }
+
+    
+    var transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: keys.email.user,
+        pass: keys.email.password
+      }
+    });
+
+    var mailOptions = {
+      from: keys.email.user,
+      to: keys.email.recipient,
+      subject: 'Your Playlists for the week 1.0',
+      html: htmlResponse.join('')
+    };
+
+    transporter.sendMail(mailOptions, function(error, info){
+      if (error) {
+        console.log(error);
+      } else {
+      console.log('Email sent: ' + info.response);
+      }
+
+    });
+    res.send('Email sent!');
+
+
+
+  });
+  // var array = [];
+  // array.push('<h1>Your Playlists </h1>');
+  // array.push('<h2>Cool Beans</h2>');
+  // array.push('<p>Ceci-Venus in Furs memories of a younger Jahroost</p>');
+  // array.push('<p>Clay-Simon in Russia wonderul song</p>');
+  // array.push('<h2>Family</h2>');
+  // array.push('<p>Ceci-Venus in Furs memories of a younger Jahroost</p>');
+  // array.push('<p>Clay-Simon in Russia wonderul song</p>');
+
+
+
+
+
   },
 );
 
