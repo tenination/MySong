@@ -412,7 +412,6 @@ router.get(
 
     }
 
-
     var transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -421,6 +420,7 @@ router.get(
       }
     });
 
+    
     var mailOptions = {
       from: keys.email.user,
       to: keys.email.recipient,

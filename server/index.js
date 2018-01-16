@@ -7,9 +7,15 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 const passport = require('passport');
 const methodOverride = require('method-override');
+const cron = require('node-cron');
+const nodemailer = require('nodemailer');
+const axios = require('axios');
+var request = require('request');
+var CronJob = require('cron').CronJob;
 
 // dotenv used to store our spotify client_id and secret on process.env
 require('dotenv').config({ path: '../env.env' });
+const keys = require('../keys');
 /* the below require('../db/passport.js')(passport) is used to reduce the
 ** amount of code in this file, look to db/passport.js for the passport
 ** strategies being implemented(Spotify only), without this line
@@ -55,7 +61,31 @@ app.use(session({
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', () => { console.log('Database connected!'); });
 // routes calls to the server/api endpoint
+
 app.use('/api', api);
+
+
+new CronJob('0 * * * * *', function() {
+    console.log('You will see this message every second');
+
+    request('http://localhost:3001/api/email', function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log('im ok')
+            // console.log(body) // Show the HTML for the Google homepage.
+        }
+    })
+}, null, true, "America/Los_Angeles");
+
+// cron.schedule('* * * * *', function(){
+//    axios({
+//           method: 'GET',
+//           url: 'http://localhost:3001/api/email',
+//         })
+//           .then((response) => {
+            
+//           })
+//           .catch(err => console.error(err, err));
+// });
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => { console.log('Running on ', port); });
