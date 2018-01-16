@@ -393,12 +393,16 @@ router.get(
           console.log('playlist name is', playlists[i].playlistName);
           htmlResponse.push(`<h2>${playlists[i].playlistName}</h2>`);
           await User.getAPlaylist(spotifyId, playlists[i].playlistName)
-            .then((result) => {
+            .then( async (result) => {
               const songsArrayBySpotifyUserID = result[0].playlists[0].songsArrayBySpotifyUserID;
-              User.populateAPlaylist(songsArrayBySpotifyUserID)
+              await User.populateAPlaylist(songsArrayBySpotifyUserID)
               .then((response) => {
             console.log('RESPONSE ***************',response);
-            console.log('PLAYLIST NAME is', playlists[i].playlistName);
+            for (let j = 0; j < response.length; j++) {
+              htmlResponse.push(`<h4>${response[j].mySongUsername} : ${response[j].currentMySong.trackSummary}</h4>`);
+              htmlResponse.push(`<img src=${response[j].currentMySong.trackImage300} height=100 width=100></img>`)
+              htmlResponse.push(`<p style=font-style:italic;>"${response[j].currentMySong.note}"</p>`);
+            }
           })
           .catch((err) => {
             res.send(err);
@@ -408,7 +412,7 @@ router.get(
 
     }
 
-    
+
     var transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -420,7 +424,7 @@ router.get(
     var mailOptions = {
       from: keys.email.user,
       to: keys.email.recipient,
-      subject: 'Your Playlists for the week 1.0',
+      subject: 'Playlists for the week 8.5',
       html: htmlResponse.join('')
     };
 
@@ -433,23 +437,7 @@ router.get(
 
     });
     res.send('Email sent!');
-
-
-
   });
-  // var array = [];
-  // array.push('<h1>Your Playlists </h1>');
-  // array.push('<h2>Cool Beans</h2>');
-  // array.push('<p>Ceci-Venus in Furs memories of a younger Jahroost</p>');
-  // array.push('<p>Clay-Simon in Russia wonderul song</p>');
-  // array.push('<h2>Family</h2>');
-  // array.push('<p>Ceci-Venus in Furs memories of a younger Jahroost</p>');
-  // array.push('<p>Clay-Simon in Russia wonderul song</p>');
-
-
-
-
-
   },
 );
 
