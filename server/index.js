@@ -65,16 +65,16 @@ db.once('open', () => { console.log('Database connected!'); });
 app.use('/api', api);
 
 
-new CronJob('0 * * * * *', function() {
-    console.log('You will see this message every second');
+// new CronJob('0 * * * * *', function() {
+//     console.log('You will see this message every second');
 
-    request('http://localhost:3001/api/email', function(error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log('im ok')
-            // console.log(body) // Show the HTML for the Google homepage.
-        }
-    })
-}, null, true, "America/Los_Angeles");
+//     request('http://localhost:3001/api/email', function(error, response, body) {
+//         if (!error && response.statusCode == 200) {
+//             console.log('im ok')
+//             // console.log(body) // Show the HTML for the Google homepage.
+//         }
+//     })
+// }, null, true, "America/Los_Angeles");
 
 // cron.schedule('* * * * *', function(){
 //    axios({

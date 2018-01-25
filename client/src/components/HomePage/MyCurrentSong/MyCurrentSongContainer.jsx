@@ -73,7 +73,7 @@ class MyCurrentSongContainer extends React.Component {
 
   emailHandler() {
     console.log('Email Handler being called!');
-    axios.get(`//email`)
+    axios.get(`/api/email`)
       .then((response) => {
         console.log(response);
       })
