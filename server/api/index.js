@@ -3,7 +3,7 @@ const axios = require('axios');
 const User = require('../../db/model/user.js');
 const path = require('path');
 require('dotenv').config({ path: '../../env.env' });
-const keys = require('../../keys');
+//const keys = require('../../keys');
 const jwt = require('jwt-simple');
 const $ = require('jquery');
 // const btoa = require('btoa');
@@ -415,15 +415,15 @@ router.get(
     var transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: keys.email.user,
-        pass: keys.email.password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
       }
     });
 
     
     var mailOptions = {
-      from: keys.email.user,
-      to: keys.email.recipient,
+      from: process.env.EMAIL_USER,
+      to: 'tim.ninan@gmail.com',
       subject: 'Playlists for the week 8.5',
       html: htmlResponse.join('')
     };

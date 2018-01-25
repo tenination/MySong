@@ -15,7 +15,7 @@ var CronJob = require('cron').CronJob;
 
 // dotenv used to store our spotify client_id and secret on process.env
 require('dotenv').config({ path: '../env.env' });
-const keys = require('../keys');
+//const keys = require('../keys');
 /* the below require('../db/passport.js')(passport) is used to reduce the
 ** amount of code in this file, look to db/passport.js for the passport
 ** strategies being implemented(Spotify only), without this line
