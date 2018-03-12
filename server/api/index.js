@@ -257,17 +257,10 @@ router.post(
 router.put(
   '/aplaylist',
   (req, res) => {
-<<<<<<< HEAD
-    console.log('PUT to /aplaylist detected!');
-    console.log('req.body is ', req.body);
-  },
-);
-=======
+
     var originalName = req.body.originalName;
     var updatedPlaylist = req.body.newPlaylist;
     var spotifyId = req.body.spotifyId;
->>>>>>> 1bc833f2637069ad7f79b08180e1e0d2e94a7d14
-
     User.updatePlaylist(spotifyId, originalName, updatedPlaylist)
       .then(result => res.send(result))
       .catch(err => res.send(err));
