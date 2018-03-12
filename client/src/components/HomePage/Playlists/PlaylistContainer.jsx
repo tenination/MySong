@@ -1,22 +1,13 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { Button } from 'semantic-ui-react';
-import axios from 'axios';
 import PlaylistEntry from './PlaylistEntry';
 import CreatePlaylistModal from './CreatePlaylistModal';
 
 class PlaylistContainer extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      playlists: [],
-    };
-
-    axios.get(`/api/playlists?spotifyUserID=${props.spotifyId}`)
-      .then((response) => {
-        this.setState({ playlists: response.data[0].playlists });
-        return response;
-      })
-      .catch(err => err);
+    this.mapFunction = this.mapFunction.bind(this);
   }
 
   mapFunction(playlistObj) {
@@ -31,18 +22,24 @@ class PlaylistContainer extends React.Component {
     );
   }
 
-  render() {
+ render() {
     return (
-      <div>
-        {this.state.playlists[0] &&
-          <div>
-            <Button.Group vertical style={{ width: '100%' }}>
-              <Button disabled >My Playlists</Button>
-              {this.state.playlists.map(this.mapFunction.bind(this))}
-              <CreatePlaylistModal spotifyId={this.props.spotifyId} color="red"/>
-            </Button.Group>
-          </div>
-        }
+      <div id="playlist-container">
+        <div id="my-playlists">My Playlists</div>
+        <div id="playlist-list">
+          <Button.Group vertical style={{ width: '100%' }}>
+            {this.props.playlists.map(this.mapFunction)}
+          </Button.Group>
+        </div>
+        <CreatePlaylistModal
+          spotifyId={this.props.spotifyId}
+          color="red"
+          following={this.props.following}
+          updatePlaylists={this.props.updatePlaylists}
+          playlists={this.props.playlists}
+          refreshFollowing={this.props.refreshFollowing}
+          view={this.props.view}
+        />
       </div>
     );
   }

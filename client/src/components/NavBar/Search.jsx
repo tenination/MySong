@@ -1,7 +1,8 @@
+/* eslint-disable max-len */
 import _ from 'lodash';
 import axios from 'axios';
 import React, { Component } from 'react';
-import { Button, Label, Search } from 'semantic-ui-react';
+import { Button, Search } from 'semantic-ui-react';
 
 let source = [
   /* ***********************************************************
@@ -24,6 +25,8 @@ class SearchExampleStandard extends Component {
       isLoading: false,
       results: [],
       value: '',
+      following: [],
+      openStatus: false,
     };
     this.handleSearchChange = this.handleSearchChange.bind(this);
     this.handleResultSelect = this.handleResultSelect.bind(this);
@@ -31,9 +34,20 @@ class SearchExampleStandard extends Component {
     this.resultRenderer = this.resultRenderer.bind(this);
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.options.length !== this.props.options.length) {
-      source = this.props.options;
+  componentDidUpdate(prevProps) {
+    const followingSpotifyIds = [];
+    let newOptions = [];
+    if (this.props.options && this.props.following.constructor === Array) {
+      this.props.following.forEach((user) => {
+        followingSpotifyIds.push(user.spotifyId);
+      });
+      newOptions = this.props.options.filter((user) => { // eslint-disable-line
+        return !followingSpotifyIds.includes(user.spotifyid) && this.props.spotifyId !== user.spotifyid;
+      });
+    }
+    if (prevProps.options.length !== newOptions.length) {
+      source = newOptions;
+      // this.handleSearchChange(null, '');
     }
   }
 
@@ -46,23 +60,30 @@ class SearchExampleStandard extends Component {
 
     setTimeout(() => {
       if (this.state.value.length < 1) return this.resetComponent();
-
+      console.log('this.state.value', this.state.value);
       const re = new RegExp(_.escapeRegExp(this.state.value), 'i');
       const isMatch = result => re.test(result.title);
-
+      const results = _.filter(source, isMatch);
+      results.unshift({
+        title: 'closeButton',
+      });
       this.setState({
         isLoading: false,
-        results: _.filter(source, isMatch),
+        following: [],
+        results,
       });
       return true; // this is only here to satisfy ESLint
     }, 500);
   }
 
   handleFollowClick(e, { spotifyid }) { // eslint-disable-line
-    e.preventDefault();
     axios.put('/api/addToFollowing', { spotifyId: spotifyid })
-      .then((data) => {
-        console.log('Follow attempt: ', data);
+      .then(() => {
+        const newFollowing = this.state.following.slice();
+        newFollowing.push(spotifyid);
+        this.setState({
+          following: newFollowing,
+        });
         this.props.refreshfollowing();
       })
       .catch((err) => {
@@ -71,32 +92,48 @@ class SearchExampleStandard extends Component {
   }
 
   resultRenderer({ title, spotifyid }) { // eslint-disable-line
-
+    let color = null;
+    let text = 'Follow';
+    let disable = false;
+    if (this.state.following.includes(spotifyid)) {
+      color = 'green';
+      text = 'Following!';
+      disable = true;
+    }
+    if (title === 'closeButton') {
+      return (
+        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+          <Button color={'red'} onClick={() => {this.setState({ openStatus: false, value: '' }); }}>Close Search</Button>
+        </div>
+      );
+    }
     return (
       <div>
-        <Label content={title} />
-        <Button spotifyid={spotifyid} onClick={this.handleFollowClick}>Follow</Button>
+        {title}
+        <Button disabled={disable} color={color} style={{ float: 'right' }} spotifyid={spotifyid} onClick={this.handleFollowClick}>{text}</Button>
       </div>
     );
   }
 
   render() {
-    const { isLoading, value, results } = this.state;
-    if (this.props.options !== '' && JSON.stringify(this.props.options) !== JSON.stringify(source)) {
-      // this.props.options contains all users and is being passed down from Homepage
-      source = this.props.options;
-    }
-
+    const {
+      openStatus, isLoading, value, results,
+    } = this.state;
     return (
       <Search
-        placeholder={'Search for users to follow'}
+        onFocus={() => {
+          this.setState({
+              openStatus: true,
+            });
+        }}
+        placeholder={'Find users to follow'}
         loading={isLoading}
-        onResultSelect={this.handleResultSelect}
         onSearchChange={this.handleSearchChange}
         results={results}
         value={value}
         resultRenderer={this.resultRenderer}
-        // {...this.props}
+        open={openStatus}
+        showNoResults={false}
       />
     );
   }

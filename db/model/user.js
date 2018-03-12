@@ -33,13 +33,25 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
 
+  twitterAccessTokenKey: {
+    type: String,
+    unique: true,
+  },
+
+  twitterAccessTokenSecret: {
+    type: String,
+    unique: true,
+  },
+
   currentMySong: {
     trackSummary: String,
     trackID: String,
     trackAlbum: String,
     trackName: String,
     trackArtist: String,
+    trackImage300: String,
     note: String,
+    createdAt: Object,
   },
 
   following: {
@@ -64,7 +76,7 @@ User.getUserPlaylists = spotifyUserId => (
 
 );
 
-User.getAPlaylist = (spotifyUserId, spotifyPlaylistURI, playlistName) => (
+User.getAPlaylist = (spotifyUserId, playlistName) => (
   User.find(
     {
       spotifyId: spotifyUserId,
@@ -117,6 +129,17 @@ User.removeFollow = (currentUserSpotifyId, removeSpotifyId) => {
   ).exec();
 };
 
+User.deletePlaylist = (currentUserSpotifyId, playlistName) => {
+  return User.update(
+    {
+      spotifyId: currentUserSpotifyId
+    },
+    {
+      $pull: { playlists: { playlistName: playlistName } }
+    }
+  ).exec();
+};
+
 User.populateFollowing = (following) => {
   const followingIds = following.map((follow) => { // eslint-disable-line
     return follow.spotifyId;
@@ -150,17 +173,39 @@ User.changeCurrentSong = (spotifyId, mySong) => {
       return err;
     })
 };
+
 User.getUser = (spotifyId) => {
   return User.findOne({ spotifyId: spotifyId }).exec()
     .then((user) => {
-      console.log('USER', user);
       return user;
     })
     .catch(err => err);
 };
 
+User.getAllUsers = () => {
+  return User.find({}, 'mySongUsername spotifyId').exec()
+    .then(user => user)
+    .catch(err => err);
+};
 
-User.getAllUsers = () => (
+User.updatePlaylist = (spotifyId, originalName, newPlaylist) => {
+  return User.update(
+    { spotifyId: spotifyId, 'playlists.playlistName': originalName },
+    {
+      $set: {
+        'playlists.$': newPlaylist }
+  })
+  .exec()
+    .then((res) => {
+      return res;
+    })
+    .catch((err) => {
+      console.log('error is ', err);
+      return err;
+    })
+};
+
+User.search = query => (
   User.find({}, 'mySongUsername spotifyId').exec()
     .then(users => users)
     .catch(err => err)

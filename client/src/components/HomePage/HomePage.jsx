@@ -1,6 +1,5 @@
 import React from 'react';
 import axios from 'axios';
-import { Container, Divider, Grid } from 'semantic-ui-react';
 import PlaylistContainer from './Playlists/PlaylistContainer';
 import CurrentPlaylist from './Main/CurrentPlaylist';
 import FollowingContainer from './Following/FollowingContainer';
@@ -10,7 +9,6 @@ import MyCurrentSongContainer from './MyCurrentSong/MyCurrentSongContainer';
 
 
 // const HOME = 'http://127.0.0.1:3000/home/'
-let refreshFollowing = false;
 
 class HomePage extends React.Component {
   constructor(props) {
@@ -25,6 +23,7 @@ class HomePage extends React.Component {
       spotifyRefreshToken: '',
       spotifyToken: '',
       spotifyUsername: '',
+      playlists:[],
       currentPlaylist: null,
       currentMySong:{
         trackSummary: '',
@@ -32,6 +31,7 @@ class HomePage extends React.Component {
         trackAlbum: '',
         trackName: '',
         trackArtist: '',
+        trackImage300: '',
         note: '',
       },
       currentPlaylistObj: {},
@@ -42,16 +42,16 @@ class HomePage extends React.Component {
     this.handleMySongChange = this.handleMySongChange.bind(this);
     this.playFollowingTrack = this.playFollowingTrack.bind(this);
     this.handleMySongChange = this.handleMySongChange.bind(this);
-    this.newPlaylistHandleClick = this.newPlaylistHandleClick.bind(this);
     this.handleFollowingRefresh = this.handleFollowingRefresh.bind(this);
     this.getFollowing = this.getFollowing.bind(this);
+    this.updatePlaylists = this.updatePlaylists.bind(this);
+    this.handlePlaylistEntryClick = this.handlePlaylistEntryClick.bind(this);
   }
 
   componentDidMount() {
     axios.get('/api/me')
       .then((res) => {
         const user = res.data.passport.user;
-        console.log('USER Session: ', user);
         this.setState({
           mySongUsername: user.mySongUsername,
           spotifyDisplayName: user.spotifyDisplayName,
@@ -63,19 +63,26 @@ class HomePage extends React.Component {
           following: user.following,
         });
       })
+      .then((res) => {
+        axios.get(`/api/playlists?spotifyUserID=${this.state.spotifyId}`)
+          .then((response) => {
+            this.setState({ playlists: response.data[0].playlists });
+            return response;
+          })
+          .catch(err => err);
+      })
       .catch((err) => {
         console.log(err);
       });
 
     axios.get('/api/getAllUsers')
       .then((results) => {
-        // console.log('SEARCH RESULTS: ', results.data);
-        // this.setOptions(results.data)
         const formatOptions = [];
         results.data.forEach((result) => {
           const formatResult = {};
           formatResult.title = result.mySongUsername;
           formatResult.key = result._id; // eslint-disable-line
+          // formatResult.onClick = (e) => { e.preventDefault(); };
           // the i in spotifyid is not capitalized to avoid an error
           formatResult.spotifyid = result.spotifyId;
           formatOptions.push(formatResult);
@@ -85,18 +92,19 @@ class HomePage extends React.Component {
       .catch((err) => {
         throw err;
       });
+
+    this.updatePlaylists();
   }
 
   getFollowing() {
-    axios.post('/api/getFollowing', {spotifyId: this.state.spotifyId})
+    axios.get('/api/getFollowing')
       .then((following) => {
-        console.log('NEW FOLLOWING');
         this.setState({
-          following: following
+          following
         })
       })
       .catch((err) => {
-        throw err
+        throw err;
       });
   }
 
@@ -107,8 +115,47 @@ class HomePage extends React.Component {
         this.setState({
           following: user.following,
         });
-        console.log('SET THE FOLLOWING STATE: ', user);
       });
+  }
+
+  updatePlaylists(newPlaylist) {
+    axios.get('/api/playlists')
+      .then((response) => {
+        if (newPlaylist) {
+          const newPlaylistObj = {
+            name: newPlaylist.playlistName,
+            playlistID: newPlaylist.spotifyPlaylistID,
+            playlistURI: newPlaylist.spotifyPlaylistURI,
+            updated: true,
+          };
+
+          this.setState({
+            currentPlaylistObj: newPlaylistObj,
+            playlists: response.data[0].playlists,
+          });
+        } else {
+          const playlistResults = response.data[0].playlists;
+          if (playlistResults.length) {
+            const firstPlaylistObj = {
+              name: playlistResults[0].playlistName,
+              playlistID: playlistResults[0].spotifyPlaylistID,
+              playlistURI: playlistResults[0].spotifyPlaylistURI,
+              updated: true,
+            };
+
+            this.setState({
+              currentPlaylistObj: firstPlaylistObj,
+              playlists: response.data[0].playlists,
+            });
+          } else {
+            this.setState({
+              currentPlaylistObj: {},
+              playlists: response.data[0].playlists,
+            });
+          }
+        }
+      })
+      .catch(err => err);
   }
 
   handlePlaylistEntryClick(playlistID, playlistURI, name) {
@@ -117,20 +164,13 @@ class HomePage extends React.Component {
         playlistID,
         playlistURI,
         name,
+        updated: false,
       },
     });
   }
 
   handleMySongChange(mySong) {
     this.setState({ currentMySong: mySong });
-  }
-
-  handleRemoveFollow(spotifyId) {
-    console.log('REMOVE FOLLLOW', spotifyId);
-    // axios.delete('/api/removeFollow', {spotifyId})
-    //   .then((following) => {
-    //     console.log('New following: ', following);
-    //   })
   }
 
   playFollowingTrack(trackID) {
@@ -141,57 +181,54 @@ class HomePage extends React.Component {
     });
   }
 
-  newPlaylistHandleClick() {
-    console.log('Nothing to see here boiiis');
-  }
-
   render() {
     return (
-      <div>
-        <NavBarContainer refreshFollowing={this.handleFollowingRefresh} history={this.props.history} options={this.state.options} username={this.state.mySongUsername} style={{ border: '10px' }} />
-        <Container style={{ marginTop: '3em', width: '100%' }}>
-          <MyCurrentSongContainer
-            currentMySong={this.state.currentMySong}
-            spotifyId={this.state.spotifyId}
-            spotifyToken={this.state.spotifyToken}
-            onMySongChange={this.handleMySongChange}
+      <div className="wrapper">
+        <NavBarContainer
+          spotifyId={this.state.spotifyId}
+          following={this.state.following}
+          refreshFollowing={this.handleFollowingRefresh}
+          history={this.props.history}
+          options={this.state.options}
+          username={this.state.mySongUsername}
+        />
+        <MyCurrentSongContainer
+          currentMySong={this.state.currentMySong}
+          spotifyId={this.state.spotifyId}
+          spotifyToken={this.state.spotifyToken}
+          onMySongChange={this.handleMySongChange}
+        />
+        {this.state.spotifyId && (<PlaylistContainer
+          playlists={this.state.playlists}
+          clickHandler={this.handlePlaylistEntryClick}
+          spotifyId={this.state.spotifyId}
+          following={this.state.following}
+          updatePlaylists={this.updatePlaylists}
+          refreshFollowing={this.handleFollowingRefresh}
+          view="playlist"
+        />)}
+        {this.state.currentPlaylistObj.name && (
+          <CurrentPlaylist
+            currentPlaylistObj={this.state.currentPlaylistObj}
+            spotifyUserId={this.state.spotifyId}
+            updatePlaylists={this.updatePlaylists}
+            playlists={this.state.playlists}
+            refreshFollowing={this.handleFollowingRefresh}
+            view="playlist"
           />
-          <Divider />
-          <Grid columns={3} stackable>
-            <Grid.Column style={{ width: '20%' }}>
-              {this.state.spotifyId && (<PlaylistContainer
-                clickHandler={this.handlePlaylistEntryClick.bind(this)}
-                spotifyId={this.state.spotifyId}
-              />)}
-            </Grid.Column>
-
-            <Grid.Column style={{ width: '60%' }}>
-              {this.state.currentPlaylistObj.name && (
-                <CurrentPlaylist
-                  currentPlaylistObj={this.state.currentPlaylistObj}
-                  spotifyUserId={this.state.spotifyId}
-                />
-              )}
-            </Grid.Column>
-
-            <Grid.Column style={{ width: '20%' }}>
-              {this.state.spotifyId && (<FollowingContainer
-                refresh={refreshFollowing}
-                spotifyId={this.state.spotifyId}
-                playFollowingTrack={this.playFollowingTrack}
-                newPlaylistHandleClick={this.newPlaylistHandleClick}
-                following={this.state.following}
-                handleRemoveFollow={this.handleRemoveFollow}
-                getFollowing={this.getFollowing}
-              />)}
-            </Grid.Column>
-
-          </Grid>
-          {this.state.songToPlay.trackID ?
-            <BottomPlayer URI={`spotify:track:${this.state.songToPlay.trackID}`} /> :
-            this.state.currentMySong.trackID && <BottomPlayer URI={`spotify:track:${this.state.currentMySong.trackID}`} />
-          }
-        </Container>
+        )}
+        {this.state.spotifyId && (<FollowingContainer
+          spotifyId={this.state.spotifyId}
+          playFollowingTrack={this.playFollowingTrack}
+          newPlaylistHandleClick={this.newPlaylistHandleClick}
+          following={this.state.following}
+          getFollowing={this.getFollowing}
+          refreshFollowing={this.handleFollowingRefresh}
+          view="following"
+        />)}
+        {this.state.songToPlay.trackID ? <BottomPlayer URI={`spotify:track:${this.state.songToPlay.trackID}`} /> :
+          this.state.currentMySong.trackID && <BottomPlayer URI={`spotify:track:${this.state.currentMySong.trackID}`} />
+        }
       </div>
     );
   }

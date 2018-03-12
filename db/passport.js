@@ -1,7 +1,9 @@
 const LocalStrategy = require('passport-local').Strategy;
 const SpotifyStrategy = require('passport-spotify').Strategy;
+const TwitterStrategy = require('passport-twitter').Strategy;
 const User = require('./model/user.js');
 require('dotenv').config({ path: '../../env.env' });
+
 
 
 module.exports = (passport) => {
@@ -31,7 +33,7 @@ module.exports = (passport) => {
           existingUser.spotifyToken = accessToken;
           return done(null, existingUser);
         }
-        const newUser = new User();
+        let newUser = new User();
         newUser.spotifyId = profile.id;
         newUser.spotifyUsername = profile.username;
         newUser.spotifyDisplayName = profile.displayName;
@@ -43,6 +45,7 @@ module.exports = (passport) => {
           trackAlbum: '',
           trackName: '',
           trackArtist: '',
+          trackImage300: '',
           note: '',
         };
         if (profile.displayName) {
@@ -57,10 +60,29 @@ module.exports = (passport) => {
             throw err1;
           }
           // don't need to store accessToken into DB, only need refreshToken
-          newUser.spotifyToken = accessToken;
-          return done(null, newUser);
         });
+        let userWithToken = Object.assign({}, newUser._doc);
+        userWithToken.spotifyToken = accessToken;
+        return done(null, userWithToken);
       });
     },
   ));
+
+  passport.use('twitter-authz',
+    new TwitterStrategy({
+        // options for google strategy
+        consumerKey: process.env.TWITTER_CONSUMER_KEY,
+        consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
+        callbackURL: 'http://127.0.0.1:3001/api/auth/twitter/callback',
+    }, (accessToken, refreshToken, profile, done) => {
+        // check if user already exists in our own db
+        console.log('twitter authentication successful!');
+        const twitterIntegration = {
+          accessTokenKey: accessToken,
+          accessTokenSecret: refreshToken,
+        };
+        return done(null, twitterIntegration);
+    })
+);
+
 };
